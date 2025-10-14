@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { ChevronDown, ChevronUp, LogOut, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generateMines } from "@/utils/mineGenerator";
 
 const Mines = () => {
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [nonce, setNonce] = useState(0);
   const [minesCount, setMinesCount] = useState(4);
   const [clientSeed, setClientSeed] = useState("2dfdf1c7fda289be");
@@ -18,14 +20,24 @@ const Mines = () => {
   const [grid, setGrid] = useState<boolean[]>(Array(25).fill(false));
 
   useEffect(() => {
-    checkAuth();
+    checkAuthAndRole();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuthAndRole = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate("/auth");
+      return;
     }
+
+    // Check if admin
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin");
+
+    setIsAdmin(roles && roles.length > 0);
   };
 
   const handleLogout = async () => {
@@ -34,24 +46,10 @@ const Mines = () => {
     navigate("/auth");
   };
 
-  const generateMinePositions = () => {
-    const newGrid = Array(25).fill(false);
-    const minePositions = new Set<number>();
-    
-    while (minePositions.size < minesCount) {
-      const position = Math.floor(Math.random() * 25);
-      minePositions.add(position);
-    }
-    
-    minePositions.forEach(pos => {
-      newGrid[pos] = true;
-    });
-    
-    setGrid(newGrid);
-  };
-
   useEffect(() => {
-    generateMinePositions();
+    // Generate mines based on cryptographic hash
+    const newGrid = generateMines(clientSeed, serverSeed, nonce, minesCount);
+    setGrid(newGrid);
   }, [minesCount, clientSeed, serverSeed, nonce]);
 
   return (
@@ -61,14 +59,26 @@ const Mines = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Mines Verification
           </h1>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="border-border hover:bg-destructive/20 hover:text-destructive hover:border-destructive"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/users")}
+                className="border-border hover:bg-accent/20 hover:border-accent"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Users
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="border-border hover:bg-destructive/20 hover:text-destructive hover:border-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <Card className="p-6 bg-card border-border space-y-6">
