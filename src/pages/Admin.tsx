@@ -4,41 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const Auth = () => {
-  const [username, setUsername] = useState("");
-  const [secretCode, setSecretCode] = useState("");
+const Admin = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleUserLogin = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Verify username and secret code
-      const { data: credential, error: credError } = await supabase
-        .from("user_credentials")
-        .select("*")
-        .eq("username", username)
-        .eq("secret_code", secretCode)
-        .eq("is_active", true)
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Check if user is admin
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "admin")
         .single();
 
-      if (credError || !credential) {
-        throw new Error("Invalid username or secret code");
+      if (!roles) {
+        await supabase.auth.signOut();
+        toast.error("Access denied. Admin only.");
+        return;
       }
 
-      // If user has no auth account, show error
-      if (!credential.user_id) {
-        throw new Error("User account not activated. Contact admin.");
-      }
-
-      toast.success("Login successful!");
-      navigate("/mines");
+      toast.success("Admin login successful!");
+      navigate("/users");
     } catch (error: any) {
       toast.error(error.message || "Login failed");
     } finally {
@@ -51,44 +53,44 @@ const Auth = () => {
       <Card className="w-full max-w-md border-border bg-card/50 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.15)]">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Mines Verification
+            Admin Login
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
-            User Login
+            Enter admin credentials to access dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleUserLogin} className="space-y-4">
+          <form onSubmit={handleAdminLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-foreground">Username</Label>
+              <Label htmlFor="admin-email" className="text-foreground">Admin Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="admin-email"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="secret-code" className="text-foreground">Secret Code</Label>
+              <Label htmlFor="admin-password" className="text-foreground">Password</Label>
               <Input
-                id="secret-code"
+                id="admin-password"
                 type="password"
                 placeholder="••••••••"
-                value={secretCode}
-                onChange={(e) => setSecretCode(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_25px_rgba(34,211,238,0.5)] transition-all"
               disabled={loading}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Logging in..." : "Login as Admin"}
             </Button>
           </form>
         </CardContent>
@@ -97,4 +99,4 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default Admin;

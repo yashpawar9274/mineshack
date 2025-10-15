@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Plus, Trash2 } from "lucide-react";
+import { LogOut, Plus, Trash2, CheckCircle, XCircle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ interface UserCredential {
   secret_code: string;
   is_active: boolean;
   created_at: string;
+  expires_at: string | null;
 }
 
 const Users = () => {
@@ -26,6 +27,7 @@ const Users = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newSecretCode, setNewSecretCode] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
 
   useEffect(() => {
     checkAdminAndFetchUsers();
@@ -82,6 +84,7 @@ const Users = () => {
         username: newUsername,
         secret_code: newSecretCode,
         created_by: session.user.id,
+        expires_at: expiresAt || null,
       });
 
     if (error) {
@@ -90,7 +93,40 @@ const Users = () => {
       toast.success("User created successfully!");
       setNewUsername("");
       setNewSecretCode("");
+      setExpiresAt("");
       setDialogOpen(false);
+      fetchUsers();
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from("user_credentials")
+      .update({ is_active: !currentStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to update user status");
+    } else {
+      toast.success(`User ${!currentStatus ? "activated" : "deactivated"} successfully`);
+      fetchUsers();
+    }
+  };
+
+  const handleSetExpiration = async (id: string) => {
+    const expiryDate = prompt("Enter expiration date (YYYY-MM-DD HH:MM:SS or leave empty to remove):");
+    
+    if (expiryDate === null) return; // User cancelled
+    
+    const { error } = await supabase
+      .from("user_credentials")
+      .update({ expires_at: expiryDate || null })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to set expiration date");
+    } else {
+      toast.success(expiryDate ? "Expiration date set successfully" : "Expiration date removed");
       fetchUsers();
     }
   };
@@ -178,6 +214,16 @@ const Users = () => {
                       className="bg-input border-border text-foreground"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expires_at" className="text-foreground">Expiration Date (Optional)</Label>
+                    <Input
+                      id="expires_at"
+                      type="datetime-local"
+                      value={expiresAt}
+                      onChange={(e) => setExpiresAt(e.target.value)}
+                      className="bg-input border-border text-foreground"
+                    />
+                  </div>
                   <Button 
                     type="submit" 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -200,6 +246,7 @@ const Users = () => {
                   <TableHead className="text-muted-foreground">Username</TableHead>
                   <TableHead className="text-muted-foreground">Secret Code</TableHead>
                   <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground">Expires</TableHead>
                   <TableHead className="text-muted-foreground">Created</TableHead>
                   <TableHead className="text-muted-foreground">Actions</TableHead>
                 </TableRow>
@@ -218,18 +265,45 @@ const Users = () => {
                         {user.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {user.expires_at ? new Date(user.expires_at).toLocaleString() : 'Never'}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="border-destructive/50 text-destructive hover:bg-destructive/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleActive(user.id, user.is_active)}
+                          className={user.is_active 
+                            ? "border-destructive/50 text-destructive hover:bg-destructive/20" 
+                            : "border-accent/50 text-accent hover:bg-accent/20"
+                          }
+                          title={user.is_active ? "Deactivate" : "Activate"}
+                        >
+                          {user.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSetExpiration(user.id)}
+                          className="border-primary/50 text-primary hover:bg-primary/20"
+                          title="Set Expiration"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="border-destructive/50 text-destructive hover:bg-destructive/20"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
