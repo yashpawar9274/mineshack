@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,7 +12,70 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [secretCode, setSecretCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [adminContact, setAdminContact] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAdminContact();
+    
+    // Subscribe to real-time contact updates
+    const channel = supabase
+      .channel('contact-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'admin_contact'
+        },
+        (payload) => {
+          setAdminContact(payload.new.whatsapp_number);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to user credential changes for real-time deactivation
+    const credentialsChannel = supabase
+      .channel('credentials-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_credentials'
+        },
+        (payload: any) => {
+          if (payload.eventType === 'DELETE' || 
+              (payload.eventType === 'UPDATE' && !payload.new?.is_active)) {
+            const currentUser = localStorage.getItem('current_username');
+            if (currentUser === payload.old?.username || currentUser === payload.new?.username) {
+              toast.error("Your account has been " + (payload.eventType === 'DELETE' ? 'deleted' : 'deactivated') + " by admin. Please contact support.");
+              setTimeout(() => {
+                localStorage.removeItem('current_username');
+                navigate("/auth");
+              }, 2000);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(credentialsChannel);
+    };
+  }, [navigate]);
+
+  const fetchAdminContact = async () => {
+    const { data } = await supabase
+      .from("admin_contact")
+      .select("whatsapp_number")
+      .single();
+    
+    if (data) {
+      setAdminContact(data.whatsapp_number);
+    }
+  };
 
   const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,18 +88,25 @@ const Auth = () => {
         .select("*")
         .eq("username", username)
         .eq("secret_code", secretCode)
-        .eq("is_active", true)
         .single();
 
       if (credError || !credential) {
         throw new Error("Invalid username or secret code");
       }
 
-      // If user has no auth account, show error
-      if (!credential.user_id) {
-        throw new Error("User account not activated. Contact admin.");
+      // Check if account is active
+      if (!credential.is_active) {
+        throw new Error("Account is deactivated. Contact admin.");
       }
 
+      // Check if account is expired
+      if (credential.expires_at && new Date(credential.expires_at) < new Date()) {
+        throw new Error("Account has expired. Contact admin.");
+      }
+
+      localStorage.setItem('current_username', username);
+      localStorage.setItem('user_credential_id', credential.id);
+      
       toast.success("Login successful!");
       navigate("/mines");
     } catch (error: any) {
@@ -91,6 +161,20 @@ const Auth = () => {
               {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
+
+          {adminContact && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground text-center mb-2">Need help?</p>
+              <Button
+                variant="outline"
+                className="w-full border-accent/50 text-accent hover:bg-accent/20"
+                onClick={() => window.open(`https://wa.me/${adminContact}`, '_blank')}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Contact Admin on WhatsApp
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

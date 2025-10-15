@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_contact: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+          whatsapp_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       user_credentials: {
         Row: {
           created_at: string | null

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LogOut, Plus, Trash2, CheckCircle, XCircle, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminContactManager } from "@/components/AdminContactManager";
 
 interface UserCredential {
   id: string;
@@ -156,11 +157,12 @@ const Users = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-4">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             User Management
           </h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <AdminContactManager />
             <Button 
               variant="outline" 
               onClick={() => navigate("/mines")}
