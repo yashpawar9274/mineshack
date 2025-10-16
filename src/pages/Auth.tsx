@@ -88,9 +88,14 @@ const Auth = () => {
         .select("*")
         .eq("username", username)
         .eq("secret_code", secretCode)
-        .single();
+        .maybeSingle();
 
-      if (credError || !credential) {
+      if (credError) {
+        console.error("Database error:", credError);
+        throw new Error("Database error occurred");
+      }
+
+      if (!credential) {
         throw new Error("Invalid username or secret code");
       }
 
