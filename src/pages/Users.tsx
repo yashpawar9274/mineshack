@@ -64,18 +64,23 @@ const Users = () => {
     fetchUsers();
   };
 
-  const generateRandomString = (length: number) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
   const handleGenerateCredentials = () => {
-    const username = generateRandomString(8);
-    const password = generateRandomString(12);
+    const prefixes = ['Iron', 'Captain', 'Spider', 'Black', 'Scarlet', 'Doctor', 'Star', 'Winter', 'Hawk', 'War', 'Ant', 'Wasp', 'Thunder', 'Silver', 'Mighty', 'Dark', 'Green', 'Red', 'Blue', 'Golden'];
+    const suffixes = ['Man', 'Woman', 'Soldier', 'Panther', 'Widow', 'Strange', 'Lord', 'Knight', 'Eye', 'Machine', 'Warrior', 'Guardian', 'Bolt', 'Surfer', 'Thor', 'Phoenix', 'Hulk', 'Skull', 'Fury', 'Ghost'];
+    const numbers = ['', '2', '3', '007', '616', '1963', '2099'];
+    
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    const number = numbers[Math.floor(Math.random() * numbers.length)];
+    
+    const username = `${prefix}${suffix}${number}`;
+    
+    // Password based on username with special chars and numbers
+    const specialChars = ['@', '#', '$', '!', '*'];
+    const randomSpecial = specialChars[Math.floor(Math.random() * specialChars.length)];
+    const randomNum = Math.floor(Math.random() * 9999);
+    const password = `${username}${randomSpecial}${randomNum}`;
+    
     setNewUsername(username);
     setNewSecretCode(password);
     setGeneratedCredentials({ username, password });
