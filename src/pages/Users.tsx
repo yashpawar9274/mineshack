@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Plus, Trash2, CheckCircle, XCircle, Calendar } from "lucide-react";
+import { LogOut, Plus, Trash2, CheckCircle, XCircle, Calendar, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AdminContactManager } from "@/components/AdminContactManager";
@@ -29,6 +30,10 @@ const Users = () => {
   const [newUsername, setNewUsername] = useState("");
   const [newSecretCode, setNewSecretCode] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [expirationDialogOpen, setExpirationDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [expirationType, setExpirationType] = useState<"hours" | "minutes" | "date">("hours");
+  const [expirationValue, setExpirationValue] = useState("");
 
   useEffect(() => {
     checkAdminAndFetchUsers();
@@ -114,20 +119,69 @@ const Users = () => {
     }
   };
 
-  const handleSetExpiration = async (id: string) => {
-    const expiryDate = prompt("Enter expiration date (YYYY-MM-DD HH:MM:SS or leave empty to remove):");
+  const handleOpenExpirationDialog = (id: string) => {
+    setSelectedUserId(id);
+    setExpirationDialogOpen(true);
+    setExpirationType("hours");
+    setExpirationValue("");
+  };
+
+  const handleSetExpiration = async () => {
+    let expiresAt: string | null = null;
     
-    if (expiryDate === null) return; // User cancelled
+    if (expirationValue) {
+      const now = new Date();
+      const value = parseInt(expirationValue);
+      
+      if (expirationType === "hours") {
+        now.setHours(now.getHours() + value);
+      } else if (expirationType === "minutes") {
+        now.setMinutes(now.getMinutes() + value);
+      }
+      
+      expiresAt = now.toISOString();
+    }
     
     const { error } = await supabase
       .from("user_credentials")
-      .update({ expires_at: expiryDate || null })
-      .eq("id", id);
+      .update({ expires_at: expiresAt })
+      .eq("id", selectedUserId);
+
+    if (error) {
+      toast.error("Failed to set expiration");
+    } else {
+      toast.success(expiresAt ? "Expiration set successfully" : "Expiration removed");
+      setExpirationDialogOpen(false);
+      setExpirationValue("");
+      fetchUsers();
+    }
+  };
+
+  const handleSetExpirationByDate = async (dateValue: string) => {
+    const { error } = await supabase
+      .from("user_credentials")
+      .update({ expires_at: dateValue || null })
+      .eq("id", selectedUserId);
 
     if (error) {
       toast.error("Failed to set expiration date");
     } else {
-      toast.success(expiryDate ? "Expiration date set successfully" : "Expiration date removed");
+      toast.success(dateValue ? "Expiration date set successfully" : "Expiration date removed");
+      setExpirationDialogOpen(false);
+      fetchUsers();
+    }
+  };
+
+  const handleRemoveExpiration = async (id: string) => {
+    const { error } = await supabase
+      .from("user_credentials")
+      .update({ expires_at: null })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to remove expiration");
+    } else {
+      toast.success("Expiration removed successfully");
       fetchUsers();
     }
   };
@@ -290,12 +344,23 @@ const Users = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleSetExpiration(user.id)}
+                          onClick={() => handleOpenExpirationDialog(user.id)}
                           className="border-primary/50 text-primary hover:bg-primary/20"
                           title="Set Expiration"
                         >
-                          <Calendar className="w-4 h-4" />
+                          <Clock className="w-4 h-4" />
                         </Button>
+                        {user.expires_at && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveExpiration(user.id)}
+                            className="border-muted-foreground/50 text-muted-foreground hover:bg-muted/20"
+                            title="Remove Expiration"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -313,6 +378,66 @@ const Users = () => {
             </Table>
           )}
         </Card>
+
+        {/* Expiration Dialog */}
+        <Dialog open={expirationDialogOpen} onOpenChange={setExpirationDialogOpen}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Set User Expiration</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">Expiration Type</Label>
+                <Select value={expirationType} onValueChange={(value: "hours" | "minutes" | "date") => setExpirationType(value)}>
+                  <SelectTrigger className="bg-input border-border text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hours">Hours</SelectItem>
+                    <SelectItem value="minutes">Minutes</SelectItem>
+                    <SelectItem value="date">Specific Date & Time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {expirationType === "date" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="expiration_datetime" className="text-foreground">Select Date & Time</Label>
+                  <Input
+                    id="expiration_datetime"
+                    type="datetime-local"
+                    onChange={(e) => handleSetExpirationByDate(e.target.value)}
+                    className="bg-input border-border text-foreground"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="expiration_value" className="text-foreground">
+                      Number of {expirationType === "hours" ? "Hours" : "Minutes"}
+                    </Label>
+                    <Input
+                      id="expiration_value"
+                      type="number"
+                      min="1"
+                      value={expirationValue}
+                      onChange={(e) => setExpirationValue(e.target.value)}
+                      placeholder={`Enter ${expirationType === "hours" ? "hours" : "minutes"}`}
+                      className="bg-input border-border text-foreground"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSetExpiration}
+                    disabled={!expirationValue}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    Set Expiration
+                  </Button>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
