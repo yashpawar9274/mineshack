@@ -94,90 +94,162 @@ const Mines = () => {
     }
   }, [minesCount, clientSeed, serverSeed, nonce]);
   return <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
         <div className="flex justify-between items-center flex-wrap gap-4">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Mines Verification
-          </h1>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
+              Game Verification Hub
+            </h1>
+            <p className="text-muted-foreground mt-2">Provably Fair Gaming Platform</p>
+          </div>
           <div className="flex gap-2 flex-wrap">
             <GameRules />
-            {isAdmin}
-            <Button variant="outline" onClick={handleLogout} className="border-border hover:bg-destructive/20 hover:text-destructive hover:border-destructive">
+            {isAdmin && <Button variant="outline" onClick={() => navigate("/admin")} className="border-primary/30 bg-primary/5 hover:bg-primary/20 hover:border-primary">
+                <Users className="w-4 h-4 mr-2" />
+                Admin Panel
+              </Button>}
+            <Button variant="outline" onClick={handleLogout} className="border-destructive/30 bg-destructive/5 hover:bg-destructive/20 hover:text-destructive hover:border-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
           </div>
         </div>
 
-        <Card className="p-6 bg-card border-border space-y-6">
-          <div className="space-y-2">
-            <Label className="text-foreground">Game</Label>
-            <Select defaultValue="mines">
-              <SelectTrigger className="bg-input border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="mines">Mines</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Game Tabs */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-2 border-primary shadow-[0_0_30px_rgba(0,255,255,0.3)] transition-all hover:shadow-[0_0_40px_rgba(0,255,255,0.5)]">
+            <div className="text-center space-y-2">
+              <div className="text-3xl">💣</div>
+              <h3 className="text-xl font-bold text-primary">Mines</h3>
+              <p className="text-sm text-muted-foreground">Active</p>
+            </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label className="text-foreground">Client Seed</Label>
-            <Input value={clientSeed} onChange={e => setClientSeed(e.target.value)} className="bg-input border-border text-foreground font-mono" />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-foreground">Server Seed</Label>
-            <Input value={serverSeed} onChange={e => setServerSeed(e.target.value)} className="bg-input border-border text-foreground font-mono text-sm" />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-foreground">Nonce</Label>
-            <div className="flex gap-2">
-              <Input value={nonce} readOnly className="bg-input border-border text-foreground flex-1" />
-              <div className="flex flex-col gap-1">
-                <Button size="icon" variant="outline" onClick={() => setNonce(n => n + 1)} className="h-7 w-10 border-border hover:bg-primary/20 hover:border-primary">
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <Button size="icon" variant="outline" onClick={() => setNonce(n => Math.max(0, n - 1))} className="h-7 w-10 border-border hover:bg-primary/20 hover:border-primary">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
+          <Card className="p-6 bg-gradient-to-br from-card/40 to-card/20 border-2 border-border/30 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent" />
+            <div className="relative text-center space-y-2 opacity-50">
+              <div className="text-3xl">✈️</div>
+              <h3 className="text-xl font-bold text-foreground">Aviator</h3>
+              <div className="inline-block px-3 py-1 bg-primary/20 text-primary text-xs font-semibold rounded-full border border-primary/30">
+                Coming Soon
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label className="text-foreground">Mines</Label>
-            <Select value={minesCount.toString()} onValueChange={v => setMinesCount(Number(v))}>
-              <SelectTrigger className="bg-input border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => <SelectItem key={num} value={num.toString()}>{num}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          <Card className="p-6 bg-gradient-to-br from-card/40 to-card/20 border-2 border-border/30 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/5 to-transparent" />
+            <div className="relative text-center space-y-2 opacity-50">
+              <div className="text-3xl">🎨</div>
+              <h3 className="text-xl font-bold text-foreground">Color Prediction</h3>
+              <div className="inline-block px-3 py-1 bg-accent/20 text-accent text-xs font-semibold rounded-full border border-accent/30">
+                Coming Soon
+              </div>
+            </div>
+          </Card>
+        </div>
 
-          <div className="border-2 border-dashed border-border rounded-lg p-4">
-            {!showGrid && <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  Enter Client Seed and Server Seed to view mine positions
-                </p>
-              </div>}
-            {showGrid && <div className="grid grid-cols-5 gap-3">
-                {grid.map((isMine, index) => <div key={index} className={`aspect-square rounded-lg flex items-center justify-center transition-all ${isMine ? 'bg-destructive/20 border-2 border-destructive shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-accent/20 border-2 border-accent shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}>
-                    {isMine ? <div className="relative">
-                        <div className="w-8 h-8 rounded-full bg-destructive" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-6 h-0.5 bg-background rotate-45" />
-                          <div className="w-6 h-0.5 bg-background -rotate-45 absolute" />
-                        </div>
-                      </div> : <div className="w-8 h-8 bg-gradient-to-br from-accent to-primary rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{
-                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-              }} />}
-                  </div>)}
-              </div>}
+        {/* Main Mines Game */}
+        <Card className="p-8 bg-gradient-to-br from-card via-card to-card/80 border-2 border-primary/20 shadow-2xl space-y-6 backdrop-blur-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Controls */}
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <Label className="text-foreground text-lg font-semibold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  Client Seed
+                </Label>
+                <Input value={clientSeed} onChange={e => setClientSeed(e.target.value)} placeholder="Enter your client seed..." className="bg-input/50 border-primary/30 text-foreground font-mono h-12 text-sm focus:ring-2 focus:ring-primary/50 transition-all" />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-foreground text-lg font-semibold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+                  Server Seed
+                </Label>
+                <Input value={serverSeed} onChange={e => setServerSeed(e.target.value)} placeholder="Enter server seed..." className="bg-input/50 border-accent/30 text-foreground font-mono h-12 text-sm focus:ring-2 focus:ring-accent/50 transition-all" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <Label className="text-foreground font-semibold">Nonce</Label>
+                  <div className="flex gap-2">
+                    <Input value={nonce} readOnly className="bg-input/50 border-border text-foreground h-12 font-mono text-center text-lg" />
+                    <div className="flex flex-col gap-1">
+                      <Button size="icon" variant="outline" onClick={() => setNonce(n => n + 1)} className="h-6 w-12 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary transition-all">
+                        <ChevronUp className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button size="icon" variant="outline" onClick={() => setNonce(n => Math.max(0, n - 1))} className="h-6 w-12 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary transition-all">
+                        <ChevronDown className="h-4 w-4 text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-foreground font-semibold">Mines Count</Label>
+                  <Select value={minesCount.toString()} onValueChange={v => setMinesCount(Number(v))}>
+                    <SelectTrigger className="bg-input/50 border-destructive/30 text-foreground h-12 focus:ring-2 focus:ring-destructive/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 24].map(num => <SelectItem key={num} value={num.toString()}>{num} Mines</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {showGrid && <div className="p-4 bg-primary/5 border border-primary/30 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-foreground">Grid Status</span>
+                    <span className="text-xs text-primary">✓ Verified</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-destructive/10 border border-destructive/30 p-2 rounded">
+                      <span className="text-destructive font-bold">{grid.filter(Boolean).length}</span> Mines
+                    </div>
+                    <div className="bg-accent/10 border border-accent/30 p-2 rounded">
+                      <span className="text-accent font-bold">{25 - grid.filter(Boolean).length}</span> Safe
+                    </div>
+                  </div>
+                </div>}
+            </div>
+
+            {/* Right: Grid Display */}
+            <div className="flex items-center justify-center">
+              <div className="w-full max-w-md">
+                {!showGrid && <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center bg-card/30 backdrop-blur-sm">
+                    <div className="space-y-4">
+                      <div className="text-6xl opacity-20">💣</div>
+                      <p className="text-muted-foreground text-sm">
+                        Enter <span className="text-primary font-semibold">Client Seed</span> and <span className="text-accent font-semibold">Server Seed</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">to reveal mine positions</p>
+                    </div>
+                  </div>}
+                {showGrid && <div className="space-y-3">
+                    <div className="grid grid-cols-5 gap-2 p-4 bg-background/50 rounded-xl border border-primary/20 shadow-inner">
+                      {grid.map((isMine, index) => <div key={index} className={`aspect-square rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${isMine ? 'bg-gradient-to-br from-destructive/30 to-destructive/10 border-2 border-destructive shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse' : 'bg-gradient-to-br from-accent/20 to-primary/10 border-2 border-accent/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}>
+                          {isMine ? <div className="relative">
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-destructive to-red-600 shadow-lg" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-5 h-0.5 bg-background rotate-45" />
+                                <div className="w-5 h-0.5 bg-background -rotate-45 absolute" />
+                              </div>
+                              <div className="absolute inset-0 rounded-full bg-destructive/30 blur-md" />
+                            </div> : <div className="relative w-6 h-6">
+                              <div className="w-6 h-6 bg-gradient-to-br from-accent via-primary to-accent rounded-sm shadow-lg animate-pulse" style={{
+                          clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                        }} />
+                              <div className="absolute inset-0 bg-accent/40 blur-sm" style={{
+                          clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                        }} />
+                            </div>}
+                        </div>)}
+                    </div>
+                  </div>}
+              </div>
+            </div>
           </div>
         </Card>
       </div>
