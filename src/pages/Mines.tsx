@@ -101,7 +101,7 @@ const Mines = () => {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-pulse">
               Game Verification Hub
             </h1>
-            <p className="text-muted-foreground mt-2">Provably Fair Gaming Platform</p>
+            <p className="text-muted-foreground mt-2">Developer : Ash King </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <GameRules />
@@ -239,11 +239,11 @@ const Mines = () => {
                               <div className="absolute inset-0 rounded-full bg-destructive/30 blur-md" />
                             </div> : <div className="relative w-6 h-6">
                               <div className="w-6 h-6 bg-gradient-to-br from-accent via-primary to-accent rounded-sm shadow-lg animate-pulse" style={{
-                          clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-                        }} />
+                        clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                      }} />
                               <div className="absolute inset-0 bg-accent/40 blur-sm" style={{
-                          clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
-                        }} />
+                        clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                      }} />
                             </div>}
                         </div>)}
                     </div>
