@@ -30,6 +30,7 @@ const Users = () => {
   const [newUsername, setNewUsername] = useState("");
   const [newSecretCode, setNewSecretCode] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
   const [expirationDialogOpen, setExpirationDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [expirationType, setExpirationType] = useState<"hours" | "minutes" | "date">("hours");
@@ -61,6 +62,28 @@ const Users = () => {
 
     setIsAdmin(true);
     fetchUsers();
+  };
+
+  const generateRandomString = (length: number) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleGenerateCredentials = () => {
+    const username = generateRandomString(8);
+    const password = generateRandomString(12);
+    setNewUsername(username);
+    setNewSecretCode(password);
+    setGeneratedCredentials({ username, password });
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard!`);
   };
 
   const fetchUsers = async () => {
@@ -96,10 +119,18 @@ const Users = () => {
     if (error) {
       toast.error("Failed to create user: " + error.message);
     } else {
-      toast.success("User created successfully!");
+      if (generatedCredentials) {
+        toast.success(
+          `User created! Username: ${generatedCredentials.username} | Password: ${generatedCredentials.password}`,
+          { duration: 10000 }
+        );
+      } else {
+        toast.success("User created successfully!");
+      }
       setNewUsername("");
       setNewSecretCode("");
       setExpiresAt("");
+      setGeneratedCredentials(null);
       setDialogOpen(false);
       fetchUsers();
     }
@@ -250,25 +281,60 @@ const Users = () => {
                   <DialogTitle className="text-foreground">Create New User</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleCreateUser} className="space-y-4">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGenerateCredentials}
+                      className="border-primary/50 text-primary hover:bg-primary/20"
+                    >
+                      Generate Random Credentials
+                    </Button>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="username" className="text-foreground">Username</Label>
-                    <Input
-                      id="username"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      required
-                      className="bg-input border-border text-foreground"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="username"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        required
+                        className="bg-input border-border text-foreground"
+                      />
+                      {newUsername && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => copyToClipboard(newUsername, "Username")}
+                          className="border-accent/50 text-accent hover:bg-accent/20"
+                        >
+                          Copy
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="secret_code" className="text-foreground">Secret Code</Label>
-                    <Input
-                      id="secret_code"
-                      value={newSecretCode}
-                      onChange={(e) => setNewSecretCode(e.target.value)}
-                      required
-                      className="bg-input border-border text-foreground"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="secret_code"
+                        value={newSecretCode}
+                        onChange={(e) => setNewSecretCode(e.target.value)}
+                        required
+                        className="bg-input border-border text-foreground"
+                      />
+                      {newSecretCode && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => copyToClipboard(newSecretCode, "Password")}
+                          className="border-accent/50 text-accent hover:bg-accent/20"
+                        >
+                          Copy
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="expires_at" className="text-foreground">Expiration Date (Optional)</Label>
